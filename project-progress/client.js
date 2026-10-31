@@ -137,10 +137,16 @@ window.__ModuleLoader__.load({
 
     // --- formatting ------------------------------------------------------------
 
-    // "项目一 · epoll 工业网关 V1.0" -> "项目一"
+    // "P0 · 设备数据小工具（WinForms，2026.11–12，60h）" -> "P0 设备数据小工具"
+    // The bar talks about the CURRENT project only (2026-11-01), so the useful
+    // label is the project name - not just the word before the first "·".
     function shortTitle(title) {
-      const head = String(title || '项目进度').split(/[·|—–-]/)[0].trim()
-      return (head || '项目进度').slice(0, 12)
+      const text = String(title || '项目进度')
+        .replace(/（[^）]*）/g, '')
+        .replace(/\([^)]*\)/g, '')
+      const parts = text.split(/[·|]/).map((part) => part.trim()).filter(Boolean)
+      const joined = parts.length > 1 ? `${parts[0]} ${parts[1]}` : (parts[0] || '项目进度')
+      return joined.trim().slice(0, 14)
     }
 
     function fmtAgo(mtime) {
@@ -163,43 +169,50 @@ window.__ModuleLoader__.load({
       return item ? item.text : null
     }
 
+    // The current big step is the only project the bar talks about. When everything
+    // is done, park on the last step instead of rendering nothing.
+    function currentStepOf(data) {
+      if (!data || !data.steps || data.steps.length === 0) return null
+      const index = data.current ? data.current.index : data.steps.length - 1
+      return data.steps[index] || null
+    }
+
     // --- seat 1: the frame-wide strip -----------------------------------------
 
+    // One project, one strip: each segment is a sub-step of the CURRENT big step,
+    // filled when done; the open sub-step's track is brighter. (2026-11-01 the
+    // student asked for the current project only - the 10-project roadmap on a
+    // 3px strip was noise.)
     function ProgressStrip() {
       const state = useProgress()
       const data = state.status === 'ready' ? state.data : null
       if (!data || !data.stats.total) return null
-      const currentIndex = data.current ? data.current.index : -1
+      const step = currentStepOf(data)
+      if (!step || !step.total) return null
+      const openIndex = step.items.findIndex((entry) => !entry.done && !entry.deferred)
 
-      // One segment per big step, in the spec's module order. `WIDTH_MODE`
-      // decides whether they share the width equally or in proportion to their
-      // sub-step count; the current step's track is brighter, which is where
-      // "current position" comes from.
       return h(
         'div',
         { style: S.stripLayer, 'aria-hidden': true },
-        data.steps.map((step, index) => h(
+        step.items.map((item, index) => h(
           'div',
           {
             key: index,
             style: {
               ...S.segment,
-              flexGrow: WIDTH_MODE === 'weighted' ? Math.max(1, step.total) : 1,
-              background: index === currentIndex ? TRACK_CURRENT : TRACK,
+              flexGrow: 1,
+              background: index === openIndex ? TRACK_CURRENT : TRACK,
             },
           },
           h('div', {
             style: {
               height: '100%',
-              width: `${step.pct}%`,
-              background: step.total > 0 && step.done === step.total ? SUCCESS : IN_PROGRESS,
+              width: item.done ? '100%' : '0%',
+              background: SUCCESS,
               transition: 'width 300ms ease',
             },
           }),
-          // Position cursor: a 2px theme-contrast notch on the left edge of the
-          // current big step. The brighter track alone was too subtle to answer
-          // "where am I" at 3px height (2026-10-31: asked for a visible marker).
-          index === currentIndex ? h('div', { style: S.cursor }) : null,
+          index === openIndex ? h('div', { style: S.cursor }) : null,
         )),
       )
     }
@@ -213,9 +226,6 @@ window.__ModuleLoader__.load({
       const [anchor, setAnchor] = React.useState(null)
       const chipRef = React.useRef(null)
       const panelRef = React.useRef(null)
-      // The panel opens AT the current step: a 50-line list that always starts at
-      // the top is useless when the real question is "where am I / what's next".
-      const currentStepRef = React.useRef(null)
       const hintRef = React.useRef(null)
       const closeTimer = React.useRef(null)
 
@@ -263,17 +273,6 @@ window.__ModuleLoader__.load({
           window.removeEventListener('scroll', onScroll, true)
         }
       }, [open])
-      // Runs when the panel opens, not on every 5s poll: a manual scroll must not
-      // be yanked back under the pointer. The sticky hint floats above the list,
-      // so its height is subtracted from the target offset.
-      React.useEffect(() => {
-        if (!open) return
-        const panel = panelRef.current
-        const node = currentStepRef.current
-        if (!panel || !node) return
-        const hintHeight = hintRef.current ? hintRef.current.offsetHeight : 0
-        panel.scrollTop = Math.max(0, node.offsetTop - hintHeight - 8)
-      }, [open])
 
       if (!data) {
         const message = state.status === 'error' ? state.message : '读取中'
@@ -284,17 +283,21 @@ window.__ModuleLoader__.load({
         )
       }
 
-      const complete = data.stats.total > 0 && data.stats.done === data.stats.total
-      // Position, not just percentage: "第2/9步" answers "where am I" at a glance,
-      // without hovering the panel. When everything is done it parks on the last
-      // step instead of pointing past the end.
+      const step = currentStepOf(data)
+      if (!step || !step.total) {
+        return h('div', { style: S.chip }, h('span', { style: S.dim }, '项目进度 --'))
+      }
       const stepCount = data.steps.length
-      const stepNo = data.current ? data.current.index + 1 : stepCount
+      const currentNo = data.current ? data.current.index + 1 : stepCount
+      // Position INSIDE the current project: "第3/10步" is what the student asked
+      // for on 2026-11-01 ("显示当前项目，知道做到哪个位置就行").
+      const openIndex = step.items.findIndex((entry) => !entry.done && !entry.deferred)
+      const stepNo = openIndex >= 0 ? openIndex + 1 : step.total
+      const complete = step.total > 0 && step.done === step.total
       // 清单文件是唯一数据源：超过 48 小时没改就明说（学生问过"条怎么不动了"）。
       const ageMs = Date.now() - (data.mtime || 0)
       const staleDays = ageMs > 48 * 3600 * 1000 ? Math.floor(ageMs / 86_400_000) : 0
       const nextTask = nextTaskOf(data)
-      const currentIndex = data.current ? data.current.index : -1
       const panel = open && anchor
         ? h(
             'div',
@@ -316,26 +319,15 @@ window.__ModuleLoader__.load({
                 nextTask || '全部完成 🎉'),
               h('div', { style: S.hintMeta },
                 (staleDays ? `清单已 ${staleDays} 天未更新（做完的小步要在 项目进度.md 里勾掉） · ` : '') +
-                `总进度 ${data.stats.done}/${data.stats.total}（${data.stats.pct}%） · 第 ${stepNo}/${stepCount} 步 · 滚轮可滚动`),
+                `当前项目 · 第 ${stepNo}/${step.total} 步 · 全局 ${data.stats.done}/${data.stats.total}（第 ${currentNo}/${stepCount} 个阶段）`),
             ),
             h('div', { style: S.panelBody },
               h('div', { style: S.panelHead },
-                `${data.title || '项目进度'}\n${fmtAgo(data.mtime)}更新 · ${data.file}\n────────────────────`),
-              data.steps.map((step, index) => {
-                const isCurrent = index === currentIndex
-                const isComplete = step.total > 0 && step.done === step.total
-                const note = step.deferred ? `（延后 ${step.deferred}）` : ''
-                return h('div', {
-                  key: index,
-                  ref: isCurrent ? currentStepRef : null,
-                  style: isCurrent ? { ...S.step, ...S.stepCurrent } : S.step,
-                },
-                  h('div', { style: isCurrent ? { ...S.stepTitle, ...S.stepTitleCurrent } : S.stepTitle },
-                    `## ${step.title}  ${step.done}/${step.total}${note}${isComplete ? ' ✓' : ''}`),
-                  step.items.map((item, itemIndex) => h('div', { key: itemIndex, style: S.item },
-                    `${item.done ? '✓' : item.deferred ? '~' : '·'} ${item.text}`)),
-                )
-              }),
+                `${step.title}  ${step.done}/${step.total}（${step.pct}%）${complete ? '  ✓' : ''}\n${fmtAgo(data.mtime)}更新 · ${data.file}`),
+              step.items.map((item, itemIndex) => h('div', {
+                key: itemIndex,
+                style: itemIndex === openIndex ? { ...S.item, ...S.itemCurrent } : S.item,
+              }, `${item.done ? '✓' : item.deferred ? '~' : '·'} ${item.text}`)),
               (data.warnings || []).length
                 ? h('div', { style: S.panelWarn },
                     '────────────────────\n' + data.warnings.map((warning) => `! ${warning}`).join('\n'))
@@ -360,14 +352,14 @@ window.__ModuleLoader__.load({
           h('div', {
             style: {
               height: '100%',
-              width: `${data.stats.pct}%`,
+              width: `${step.pct}%`,
               background: complete ? SUCCESS : IN_PROGRESS,
               transition: 'width 300ms ease',
             },
           })),
-        h('span', { style: S.text }, `${shortTitle(data.title)} ${data.stats.pct}%`),
-        h('span', { style: S.dim }, `第${stepNo}/${stepCount}步`),
-        h('span', { style: S.dim }, `${data.stats.done}/${data.stats.total}`),
+        h('span', { style: S.text }, `${shortTitle(step.title)} ${step.pct}%`),
+        h('span', { style: S.dim }, `第${stepNo}/${step.total}步`),
+        h('span', { style: S.dim }, `${step.done}/${step.total}`),
         state.stale || staleDays ? h('span', { style: S.dot }, '●') : null,
       )
 
@@ -455,6 +447,12 @@ window.__ModuleLoader__.load({
       stepTitle: { color: 'var(--dsw-alias-label-primary)' },
       stepTitleCurrent: { fontWeight: 600 },
       item: { paddingLeft: '2px' },
+      // The one open sub-step of the current project: the "you are here" row.
+      itemCurrent: {
+        background: 'rgba(77,107,254,0.14)',
+        borderRadius: '4px',
+        paddingLeft: '2px',
+      },
       panelWarn: { marginTop: '8px', color: WARN },
       // The position cursor on the 3px top strip. Theme label colour: near-black
       // in the light theme, near-white in the dark one, so it never disappears.
