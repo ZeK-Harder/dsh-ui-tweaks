@@ -1,0 +1,4 @@
+# VS Code 风格的代码字体（只注入 CSS，不改 DSH 本体）
+- insert:
+    - id: ui-vscode-code
+      name: '@local/dsh-ui-vscode-code'

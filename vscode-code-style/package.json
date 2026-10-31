@@ -1,0 +1,20 @@
+{
+  "name": "@local/dsh-ui-vscode-code",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "VS Code 风格的代码字体：等宽字体栈 + 随正文字号缩放的代码字号/行高（只注入一张样式表）",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
+  }
+}

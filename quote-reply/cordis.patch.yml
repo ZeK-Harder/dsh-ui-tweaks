@@ -1,0 +1,16 @@
+# @local/dsh-quote-reply bundle patch: inserts the plugin row into the profile
+# roster.
+#
+# The node half serves the loopback-only GET /quote-reply/message route: it reads
+# the session log and returns the plain text of one message by id. The browser
+# half (exports "./client") mounts a "引用" action beside the shipped actions of
+# every finalized assistant message (conversation.chat.assistant-actions), and
+# inserts the quoted text into the composer through the official InputActions.
+#
+# The entry name is the BARE package name on purpose: the client-module scanner
+# treats it as a package specifier and resolves `<name>/package.json`, so a
+# subpath entry would be cached as "not a client package" and the browser half
+# would silently never load.
+- insert:
+    - id: quote-reply
+      name: '@local/dsh-quote-reply'

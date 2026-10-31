@@ -1,0 +1,1 @@
+{"schema":1,"updated":"2026-10-11T13:54:02.7486156+08:00","startedAt":"2026-10-11T13:53:56.6670790+08:00","samplerPid":74672,"intervalSec":2,"idleLimitSec":99999,"tracked":["zzz","DeepSeek Harness"],"last":{"cat":"vscode","proc":"DeepSeek Harness","title":"创建Linux导师模式 — DeepSeek Harness","idleSec":13.9,"counted":true,"deltaSec":2},"days":{"2026-10-11":{"dsh":0,"vscode":6}}}

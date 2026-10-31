@@ -1,0 +1,14 @@
+# @local/dsh-image-lightbox-close bundle patch: inserts the plugin row into the
+# profile roster.
+#
+# The node half does nothing; the browser half (exports "./client") injects one
+# stylesheet that moves the image lightbox close button out of the window
+# titlebar's close corner.
+#
+# The entry name is the BARE package name on purpose: the client-module scanner
+# treats it as a package specifier and resolves `<name>/package.json`, so a
+# subpath entry would be cached as "not a client package" and the browser half
+# would silently never load.
+- insert:
+    - id: image-lightbox-close
+      name: '@local/dsh-image-lightbox-close'

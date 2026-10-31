@@ -1,0 +1,14 @@
+# @local/dsh-project-progress bundle patch: inserts the plugin row into the
+# profile roster.
+#
+# The node half parses 项目进度.md and serves /project-progress/stats; the browser
+# half (exports "./client") draws the frame-wide top strip in shell.overlay and
+# the percentage chip in conversation.session.header.utilities.
+#
+# The entry name is the BARE package name on purpose: the client-module scanner
+# treats it as a package specifier and resolves `<name>/package.json`, so a
+# subpath entry would be cached as "not a client package" and the browser half
+# would silently never load.
+- insert:
+    - id: project-progress
+      name: '@local/dsh-project-progress'

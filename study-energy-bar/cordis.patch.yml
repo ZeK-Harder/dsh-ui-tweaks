@@ -1,0 +1,14 @@
+# @local/dsh-study-energy-bar bundle patch: inserts the plugin row into the
+# profile roster.
+#
+# The node half starts the study-time sampler and serves /study-energy/stats;
+# the browser half (exports "./client") draws the energy bar in
+# conversation.header.leading.
+#
+# The entry name is the BARE package name on purpose: the client-module scanner
+# treats it as a package specifier and resolves `<name>/package.json`, so a
+# subpath entry would be cached as "not a client package" and the browser half
+# would silently never load.
+- insert:
+    - id: study-energy-bar
+      name: '@local/dsh-study-energy-bar'
