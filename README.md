@@ -1,8 +1,9 @@
-# ui-tweaks —— DSH 界面/功能改造区（专用窗口）
+# ui-tweaks —— DSH 界面/功能改造区
 
-> **窗口约定（学生 2026-10-11 原话）**：「这个窗口我就是用来专门修改功能的，学习都在其他地方」。
-> 所以：**这个窗口只做 DSH 界面/插件改造，不推进学习主线**；学习进度在另一个「导师模式」窗口里推进。
-> 两边会写同一批文件（`PROGRESS.md`、`导师工作台\学生画像.md`）→ **改文件用锚定式小改，别整篇重写**，撞版本冲突就重读重试（guard 只报冲突、不丢数据）。
+> **这个窗口只做 DSH 界面/插件改造，不推进学习主线**；学习在主工作区（`C:\Users\24552\Documents\机器人应用层学习`，显示名已改为「本科就业-设备软件」）的另一个会话里推进。
+> 本目录是这些插件的**源码 + 版本管理**（`git` 仓库，远程 `ZeK-Harder/dsh-ui-tweaks`）：改坏能回滚，和学习计划无关。
+> 下面的 `README.md` 都是**工程笔记**（时间戳 + 踩坑 + 约定），不是正式交付文档，不追求排版，追求下次别再踩同一个坑。
+
 
 ## 一、清单
 
@@ -11,7 +12,7 @@
 | `vscode-code-style\` | `@local/dsh-ui-vscode-code` / `ui-vscode-code` | ✅ 在用（已验收） | 代码字体/行高改成 VS Code 风格 |
 | `study-energy-bar\` | `@local/dsh-study-energy-bar` / `study-energy-bar` | ✅ 在用（已验收） | 顶部学习时间能量条（`sampler.ps1` 采样 + 宿主路由 + 客户端条） |
 | `image-lightbox-close\` | `@local/dsh-image-lightbox-close` / `image-lightbox-close` | ✅ 在用（已验收） | 图片浮层关闭键从标题栏 × 那角挪到左上 |
-| `project-progress\` | `@local/dsh-project-progress` / `project-progress` | ✅ 在用（等学生看完） | 顶边细条（`shell.overlay`）+ 会话标题右侧胶囊（`.utilities`）：项目一**小步**进度，数据源工作区根 `项目进度.md` |
+| `project-progress\` | `@local/dsh-project-progress` / `project-progress` | ✅ 在用 | 顶边细条（`shell.overlay`）+ 会话标题右侧胶囊（`.utilities`）：**只显示当前项目**的小步进度，数据源工作区根 `项目进度.md` |
 | `quote-reply\` | `@local/dsh-quote-reply` / `quote-reply` | ✅ 已装（等学生刷新验收） | 每条助手回复加「引用」按钮：点一下把该回复文本以 `> ` 格式插进输入框（`conversation.chat.assistant-actions` + 官方 `InputActions`） |
 | `quick-reload\` | `@local/dsh-quick-reload` / `quick-reload` | ❌ **已彻底移除**（2026-10-11：`remove_bundle` + 删源码目录 + profile 依赖清理；要回来得重写，README 存档在 git/对话里） | 会话标题栏「⟳ 重载」按钮，学生判定没用 |
 | `_profile-backup\` | — | 备份 | 见下 |
